@@ -1,0 +1,24 @@
+# Dependências
+node_modules/
+/conexao-nossas-ideias-backend/node_modules/
+/conexao-nossas-ideias-frontend/node_modules/
+
+# Builds e código compilado
+dist/
+/conexao-nossas-ideias-backend/dist/
+.next/
+/conexao-nossas-ideias-frontend/.next/
+out/
+build/
+
+# Arquivos de ambiente e segredos (NUNCA suba arquivos .env reais)
+.env
+*.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs do Docker e do sistema
+*.log
+.docker/

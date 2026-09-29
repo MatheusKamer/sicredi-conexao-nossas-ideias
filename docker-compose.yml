@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: sicredi-conexao-nossas-ideias-postgres
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres_nossas_ideias
+      POSTGRES_PASSWORD: postgres_nossas_ideias
+      POSTGRES_DB: sicredi_conexao_nossas_ideias
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U postgres_nossas_ideias -d sicredi_conexao_nossas_ideias',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./conexao-nossas-ideias-backend
+    container_name: sicredi-conexao-nossas-ideias-backend
+    ports:
+      - '3001:3001'
+    environment:
+      - DATABASE_URL=postgresql://postgres_nossas_ideias:postgres_nossas_ideias@postgres:5432/sicredi_conexao_nossas_ideias?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: ./conexao-nossas-ideias-frontend
+    container_name: sicredi-conexao-nossas-ideias-frontend
+    ports:
+      - '3000:3000'
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+
+volumes:
+  postgres_data:

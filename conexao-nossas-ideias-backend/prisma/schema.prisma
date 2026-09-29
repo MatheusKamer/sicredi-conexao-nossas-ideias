@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Users {
+  id        String    @id @default(uuid()) @db.Uuid
+  email     String    @unique
+  name      String?
+  ldap      String?   @unique @map("ldap")
+  password  String?
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  lastLogin DateTime? @map("last_login")
+
+  requests Requests[]
+
+  @@map("users")
+}
+
+// model UserArea {
+//   id        String   @id @default(uuid()) @db.Uuid
+//   userId    String   @map("user_id") @db.Uuid
+//   areaId    String   @map("area_id") @db.Uuid
+//   createdAt DateTime @default(now()) @map("created_at")
+//   updatedAt DateTime @updatedAt @map("updated_at")
+
+//   user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   area Areas @relation(fields: [areaId], references: [id], onDelete: Cascade)
+
+//   @@map("user_area")
+// }
+
+enum AreasType {
+  AGENCY
+  HEADQUARTERS
+
+  @@map("areas_type")
+}
+
+model Areas {
+  id        String    @id @default(uuid()) @db.Uuid
+  type      AreasType
+  name      String
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  requests Requests[]
+
+  @@map("areas")
+}
+
+enum RequestsStatusType {
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@map("requests_status_type")
+}
+
+enum RequestsPriorityType {
+  LOW
+  MEDIUM
+  HIGH
+
+  @@map("requests_priority_type")
+}
+
+model Requests {
+  id              String               @id @default(uuid()) @db.Uuid
+  title           String
+  description     String
+  requester       String               @map("user_id") @db.Uuid
+  areaId          String               @map("area_id") @db.Uuid
+  priority        RequestsPriorityType
+  status          RequestsStatusType   @default(PENDING)
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+  decisionComment String?              @map("decision_comment")
+  decidedAt       DateTime?            @map("decided_at")
+
+  user Users @relation(fields: [requester], references: [id], onDelete: NoAction)
+  area Areas @relation(fields: [areaId], references: [id], onDelete: NoAction)
+
+  @@map("requests")
+}
