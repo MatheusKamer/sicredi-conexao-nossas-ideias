@@ -30,7 +30,9 @@ services:
       - /app/node_modules
     command: sh -c "npx prisma migrate deploy && npm run start:dev"
     environment:
-      - DATABASE_URL=postgresql://postgres_nossas_ideias:postgres_nossas_ideias@postgres:5432/sicredi_conexao_nossas_ideias?schema=public
+      DATABASE_URL: postgresql://postgres_nossas_ideias:postgres_nossas_ideias@postgres:5432/sicredi_conexao_nossas_ideias?schema=public
+      WATCHPACK_POLLING: 'true'
+      CHOKIDAR_USEPOLLING: 'true'
     depends_on:
       postgres:
         condition: service_healthy
