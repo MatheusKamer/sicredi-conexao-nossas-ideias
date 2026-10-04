@@ -8,4 +8,5 @@ export enum RequestsStatusType {
   PENDING = 'PENDING',
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
+  UNDER_REVIEW = 'UNDER_REVIEW',
 }
