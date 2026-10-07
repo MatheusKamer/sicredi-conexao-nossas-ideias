@@ -113,7 +113,9 @@ export class RequestsService {
     }
 
     if (request.status !== 'PENDING') {
-      throw new Error('Only requests with status PENDING can be removed');
+      throw new BadRequestException(
+        'Only requests with status PENDING can be removed',
+      );
     }
 
     return this.requestsRepo.delete({
