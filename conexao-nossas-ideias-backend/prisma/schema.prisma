@@ -12,16 +12,24 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UsersRoleType {
+  MANAGER
+  ASSISTANT
+
+  @@map("users_role_type")
+}
+
 model Users {
-  id        String    @id @default(uuid()) @db.Uuid
-  email     String    @unique
+  id        String        @id @default(uuid()) @db.Uuid
+  email     String        @unique
   name      String?
-  ldap      String?   @unique @map("ldap")
+  ldap      String?       @unique @map("ldap")
   password  String?
-  isActive  Boolean   @default(true) @map("is_active")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  lastLogin DateTime? @map("last_login")
+  role      UsersRoleType @map("role")
+  isActive  Boolean       @default(true) @map("is_active")
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  lastLogin DateTime?     @map("last_login")
 
   requests Requests[]
 
