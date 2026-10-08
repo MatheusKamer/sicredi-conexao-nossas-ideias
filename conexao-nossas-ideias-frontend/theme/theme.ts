@@ -9,6 +9,7 @@ export const tokens = {
   primaryTint: '#E6F1EB',
   accent: '#7FBA27',
   accentTint: '#F1F8E7',
+  accentText: '#4E7A12',
   bg: '#F8F9FA',
   surface: '#FFFFFF',
   textDark: '#212529',
@@ -22,21 +23,35 @@ export const tokens = {
   info: '#1F5FAD',
   infoTint: '#EAF1FB',
   neutralButton: '#495057',
+  muted: '#6C757D',
+  // Chart fills.
   priority: {
     LOW: '#B5D67F',
     MEDIUM: '#7FBA27',
     HIGH: '#00703C',
   },
+  // Icon/label color of the priority indicator in tables.
+  priorityText: {
+    LOW: '#6C757D',
+    MEDIUM: '#5E8F1C',
+    HIGH: '#00703C',
+  },
 } as const;
+
+type PriorityColors = { LOW: string; MEDIUM: string; HIGH: string };
 
 declare module '@mui/material/styles' {
   interface Palette {
     outline: string;
-    priority: { LOW: string; MEDIUM: string; HIGH: string };
+    muted: string;
+    priority: PriorityColors;
+    priorityText: PriorityColors;
   }
   interface PaletteOptions {
     outline?: string;
-    priority?: { LOW: string; MEDIUM: string; HIGH: string };
+    muted?: string;
+    priority?: PriorityColors;
+    priorityText?: PriorityColors;
   }
 }
 
@@ -54,6 +69,7 @@ export const theme = createTheme({
     secondary: {
       main: tokens.accent,
       light: tokens.accentTint,
+      dark: tokens.accentText,
       contrastText: tokens.textDark,
     },
     error: { main: tokens.error, light: tokens.errorTint },
@@ -63,7 +79,9 @@ export const theme = createTheme({
     text: { primary: tokens.textDark, secondary: tokens.textSecondary },
     divider: tokens.divider,
     outline: tokens.outline,
+    muted: tokens.muted,
     priority: tokens.priority,
+    priorityText: tokens.priorityText,
   },
   shape: { borderRadius: 8 },
   typography: {
@@ -140,7 +158,8 @@ export const theme = createTheme({
           backgroundColor: tokens.bg,
           color: tokens.textSecondary,
           fontSize: 12,
-          fontWeight: 500,
+          fontWeight: 600,
+          letterSpacing: 0.3,
         },
         body: { fontSize: 14 },
       },
