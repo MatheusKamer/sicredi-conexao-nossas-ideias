@@ -22,6 +22,10 @@ export class RequestsRepository {
     return this.prismaService.requests.findMany(findManyDto);
   }
 
+  count(countDto: Prisma.RequestsCountArgs) {
+    return this.prismaService.requests.count(countDto);
+  }
+
   update(updateDto: Prisma.RequestsUpdateArgs) {
     return this.prismaService.requests.update(updateDto);
   }

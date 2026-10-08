@@ -12,10 +12,6 @@ export class CreateRequestDto {
 
   @IsUUID()
   @IsNotEmpty()
-  requester: string;
-
-  @IsUUID()
-  @IsNotEmpty()
   areaId: string;
 
   @IsNotEmpty()

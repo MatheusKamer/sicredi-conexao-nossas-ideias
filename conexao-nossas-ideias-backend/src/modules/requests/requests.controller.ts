@@ -13,19 +13,28 @@ import { RequestsService } from './requests.service';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
 import { FindRequestsDto } from './dto/find-requests.dto';
+import { ActiveUserId } from 'src/shared/decorators/ActiveUserId';
 
 @Controller('requests')
 export class RequestsController {
   constructor(private readonly requestsService: RequestsService) {}
 
   @Post()
-  create(@Body() createRequestDto: CreateRequestDto) {
-    return this.requestsService.create(createRequestDto);
+  create(
+    @ActiveUserId() userId: string,
+    @Body() createRequestDto: CreateRequestDto,
+  ) {
+    return this.requestsService.create(userId, createRequestDto);
   }
 
   @Get()
   findAll(@Query() query: FindRequestsDto) {
     return this.requestsService.findAll(query);
+  }
+
+  @Get('summary')
+  getSummary() {
+    return this.requestsService.getSummary();
   }
 
   @Get(':id')
