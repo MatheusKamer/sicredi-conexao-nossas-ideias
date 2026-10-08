@@ -26,6 +26,11 @@ type DialogShellProps = {
   busy?: boolean;
   /** Render the content as a <form> so Enter submits and actions can be type="submit". */
   onSubmit?: (event: React.FormEvent<HTMLFormElement>) => void;
+  /**
+   * Runs once the enter transition ends. Use it to focus the first field: `autoFocus` loses
+   * to the dialog's focus trap, which moves focus to the paper on open.
+   */
+  onEntered?: () => void;
 };
 
 export function DialogShell({
@@ -38,6 +43,7 @@ export function DialogShell({
   actions,
   busy,
   onSubmit,
+  onEntered,
 }: DialogShellProps) {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -55,6 +61,7 @@ export function DialogShell({
       fullScreen={fullScreen}
       aria-labelledby={titleId}
       aria-describedby={subtitle ? subtitleId : undefined}
+      slotProps={{ transition: { onEntered } }}
     >
       <Box
         component={onSubmit ? 'form' : 'div'}
@@ -98,10 +105,14 @@ export function DialogShell({
         <Stack
           direction="row"
           spacing={2}
+          useFlexGap
           sx={{ alignItems: 'center', justifyContent: 'space-between', px: 3, py: 2 }}
         >
-          <Box sx={{ color: 'text.secondary', fontSize: 13 }}>{footerNote}</Box>
-          <Stack direction="row" spacing={1.5}>
+          {/* Hidden on phones, where the action buttons need the whole row. */}
+          <Box sx={{ display: { xs: 'none', sm: 'block' }, color: 'text.secondary', fontSize: 13 }}>
+            {footerNote}
+          </Box>
+          <Stack direction="row" spacing={1.5} sx={{ ml: 'auto' }}>
             {actions}
           </Stack>
         </Stack>

@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { Stack } from '@mui/material';
 import { PageHeader } from '@/components/layout/page-header';
 import { NewRequestButton } from '@/components/requests/new-request-button';
-import { RequestsView } from './requests-view';
+import { RequestsView, RequestsViewFallback } from './requests-view';
 
 export const metadata: Metadata = { title: 'Solicitações | Conexão Nossas Ideias' };
 
@@ -16,7 +16,7 @@ export default function SolicitacoesPage() {
         actions={<NewRequestButton />}
       />
       {/* The filters are read from the URL (useSearchParams), so this part renders on the client. */}
-      <Suspense>
+      <Suspense fallback={<RequestsViewFallback />}>
         <RequestsView />
       </Suspense>
     </Stack>

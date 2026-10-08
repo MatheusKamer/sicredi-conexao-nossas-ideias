@@ -1,15 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  Alert,
-  Button,
-  Card,
-  LinearProgress,
-  Snackbar,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Button, Card, LinearProgress, Skeleton, Stack, Typography } from '@mui/material';
 import SearchOffRounded from '@mui/icons-material/SearchOffRounded';
 import type { Request } from '@/lib/api/types';
 import { useAuth } from '@/lib/auth/auth-provider';
@@ -24,17 +16,39 @@ import {
 import { RequestsFilters } from '@/components/requests/requests-filters';
 import { RequestsPagination } from '@/components/requests/requests-pagination';
 import { RequestsTable } from '@/components/requests/requests-table';
+import { useNotify } from '@/components/ui/feedback-provider';
+import { useHydrated } from '@/lib/use-hydrated';
 
 // `request` is kept when a dialog closes so its content stays put during the exit transition.
 type DialogState = { action: RequestAction | null; request: Request | null };
 
+/** Loading placeholder: the Suspense fallback and the pre-hydration render. */
+export function RequestsViewFallback() {
+  return (
+    <Stack spacing={3} aria-busy>
+      <Card sx={{ p: 3 }}>
+        <Skeleton variant="rounded" height={56} />
+        <Skeleton width="60%" sx={{ mt: 3.5 }} />
+      </Card>
+      <Card>
+        <RequestsTable variant="full" rows={undefined} loading skeletonRows={10} renderActions={() => null} />
+      </Card>
+    </Stack>
+  );
+}
+
 export function RequestsView() {
+  // See useHydrated: the summary may already be cached by the sidebar when this hydrates.
+  return useHydrated() ? <RequestsViewContent /> : <RequestsViewFallback />;
+}
+
+function RequestsViewContent() {
   const { isManager } = useAuth();
   const { filters, setFilters, clearFilters, hasActiveFilters } = useRequestFilters();
   const requests = useRequests(filters);
   const summary = useRequestsSummary();
   const [dialog, setDialog] = useState<DialogState>({ action: null, request: null });
-  const [toast, setToast] = useState<string | null>(null);
+  const notify = useNotify();
 
   const meta = requests.data?.meta;
 
@@ -130,7 +144,7 @@ export function RequestsView() {
         onClose={closeDialog}
         onDeleted={() => {
           closeDialog();
-          setToast('Solicitação excluída.');
+          notify('Solicitação excluída.');
         }}
       />
       <RequestDetailsDialog
@@ -138,17 +152,6 @@ export function RequestsView() {
         request={dialog.request}
         onClose={closeDialog}
       />
-
-      <Snackbar
-        open={!!toast}
-        autoHideDuration={4000}
-        onClose={(_, reason) => reason !== 'clickaway' && setToast(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity="success" variant="filled" onClose={() => setToast(null)}>
-          {toast}
-        </Alert>
-      </Snackbar>
     </Stack>
   );
 }
