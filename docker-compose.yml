@@ -38,14 +38,15 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ./conexao-nossas-ideias-frontend
+    build:
+      context: ./conexao-nossas-ideias-frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3001
     container_name: sicredi-conexao-nossas-ideias-frontend
     ports:
       - '3000:3000'
     depends_on:
       - backend
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:3001
 
 volumes:
   postgres_data:

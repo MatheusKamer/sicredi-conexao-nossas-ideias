@@ -8,11 +8,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Frontend for "Conexão Nossas Ideias", built for a Sicredi technical challenge (spec PDF: `../conexao-nossas-ideias-backend/docs/Desafio_Tecnico_Assessor_Desenvolvimento_Sistemas-v2.pdf`). Users submit ideas/requests to an area (agency or headquarters), and those requests go through a review/decision workflow. The git repo root is the parent folder, which also holds `conexao-nossas-ideias-backend` (NestJS + Prisma, port 3001, which has its own CLAUDE.md) and a `docker-compose.yml` that runs Postgres, the backend, and this frontend.
 
-This app is still the stock `create-next-app` scaffold: Next.js 16.3 App Router (`app/`), React 19.2, Tailwind CSS v4, and TypeScript strict. No API client, auth handling, or test setup exists yet. The implementation roadmap lives in `docs/PLAN.md`.
+Stack: Next.js 16.3 App Router (`app/`), React 19.2, TypeScript strict, MUI Material v9, TanStack Query v5, react-hook-form + zod v4. Tailwind v4 is still installed. The implementation roadmap (with its step order and product decisions) lives in `docs/PLAN.md`.
+
+## Architecture
+
+- `app/layout.tsx`: loads the fonts (`--font-exo2`, `--font-roboto`) and wraps the app in `AppRouterCacheProvider` (`enableCssLayer`) → `app/providers.tsx` (client: `ThemeProvider` + `CssBaseline` + `QueryClientProvider` + `AuthProvider`).
+- `theme/theme.ts`: the single source of visual values. It exports `theme` and `tokens`, and augments the palette with `outline` and `priority`.
+- `lib/api/`: `client.ts` (`apiRequest`, a fetch wrapper that adds the Bearer token, drops empty query params, and throws `ApiError { status, messages[] }` normalized from Nest errors), `endpoints.ts` (`authApi`, `usersApi`, `areasApi`, `requestsApi`), and `types.ts` (mirrors of the backend contract).
+- `lib/queries/requests.ts`: `queryKeys` plus TanStack hooks. Every request mutation invalidates the whole `['requests']` tree (lists, summary, details).
+- `lib/auth/`:
+  - `session.ts`: JWT stored in the non-HttpOnly `cni_session` cookie, with `max-age` taken from the token `exp`. It's shared with `proxy.ts`, so it has no `"use client"`.
+  - `auth-provider.tsx`: `useAuth()` returns `{ user, isManager, signin, signout }`. On a 401, `apiRequest` clears the cookie and calls the handler AuthProvider registered, which clears the query cache and routes to `/signin?next=…`.
+- `proxy.ts` (Next 16's middleware): an optimistic cookie check. It redirects `/dashboard` and `/solicitacoes` to `/signin` without a session, and `/signin` to `/dashboard` with one.
+- `lib/requests/labels.ts`: pt-BR labels for statuses, priorities, area types, and roles. Use them instead of inline strings.
+- Role rule (frontend-only by decision): only `MANAGER` (`useAuth().isManager`) may change status or decide.
 
 ## UI stack: MUI Material
 
-- Build UI with **MUI Material** (`@mui/material`, Emotion). Use `@mui/icons-material` for icons and `@mui/x-charts` for charts. Prefer MUI components and the theme over hand-rolled markup or Tailwind utilities. Tailwind is still installed; keep it, at most, for page-level layout glue.
+- Build UI with **MUI Material v9** (`@mui/material`, Emotion). v9 removed the deprecated props: use `slotProps` (e.g. `slotProps.input` on TextField, `slotProps.paper` on Dialog), and use `sx` instead of system props on `Box`/`Typography`/`Stack`. Use `@mui/icons-material` for icons and `@mui/x-charts` for charts. Prefer MUI components and the theme over hand-rolled markup or Tailwind utilities. Tailwind is still installed; keep it, at most, for page-level layout glue.
 - Integrate with the App Router through `@mui/material-nextjs` (`AppRouterCacheProvider` in the root layout) plus a `ThemeProvider`/`CssBaseline` client wrapper. MUI components that take event handlers or use hooks must live in `"use client"` files.
 - All visual values come from the theme (see below). Don't hardcode hex colors in components.
 
@@ -39,8 +52,8 @@ The design is in `../../sicredi_nossas_ideias.pen` (outside this git repo). `.pe
 | Pencil component | Spec | MUI implementation |
 |---|---|---|
 | `TextField` | Outlined, 56px tall, floating 12px label, 16px value, optional trailing icon (`arrow_drop_down`, `search`, `lock`, `visibility`, `mail`…), helper text on the left and a character counter (`45/100`) on the right | `TextField variant="outlined"`. Use `select` for dropdowns, `InputAdornment` for icons, and `helperText` for the helper and counter row |
-| `Button/Contained` | Fill `accent` with **dark text** (`text-dark`), 15px/500, padding 10×22, small shadow, optional start icon | `Button variant="contained" color="secondary"` with `startIcon`. The theme needs `secondary.contrastText = text-dark` |
-| `Button/Outlined` | `outline` border, `#495057` text | `Button variant="outlined"`, neutral color override |
+| `Button/Contained` | Fill `accent` with **dark text** (`text-dark`), 15px/500, padding 10×22, small shadow, optional start icon | `Button variant="contained"` with `startIcon`. The theme defaults Button `color` to `secondary` (accent, dark contrast text) |
+| `Button/Outlined` | `outline` border, `#495057` text | `Button variant="outlined"`. The default secondary color is restyled as the neutral design button |
 | `NavItem` | 224×44, icon 22 + 14px/500 label, optional count badge (`primary-tint` bg, `primary` text). Active state = `primary-tint` bg + `primary` text | `ListItemButton` + `ListItemIcon` + `ListItemText` + `Chip`/badge, with `selected` styling from the theme |
 | `StatusChip` | Pill (radius 12), 6px dot + 12px/500 label, tinted bg | Small `Chip` with a dot icon. Variants: **Aberta** `#EAF1FB`/`#1F5FAD` (PENDING) · **Em análise** `warning-tint`/`warning` (UNDER_REVIEW) · **Aprovada** `primary-tint`/`primary` (APPROVED) · **Rejeitada** `error-tint`/`error` (REJECTED) |
 | `RadioOption` | 42px row, 24px radio icon (`outline` → checked `primary`), 15px label | `FormControlLabel` + `Radio` inside a `RadioGroup` |
@@ -59,13 +72,13 @@ npm run start   # serve the build
 npm run lint    # eslint (flat config: next core-web-vitals + typescript)
 ```
 
-There's no test runner configured. To run the full stack from the parent directory, use `docker compose up`. Compose passes `NEXT_PUBLIC_API_URL=http://localhost:3001` to the frontend.
+There's no test runner configured. Copy `.env.example` to `.env.local` (`NEXT_PUBLIC_API_URL=http://localhost:3001`). To run the full stack from the parent directory, use `docker compose up`. The compose file passes `NEXT_PUBLIC_API_URL` as a build arg, because `NEXT_PUBLIC_*` values are inlined at build time. Seeded login users (password in `../conexao-nossas-ideias-backend/prisma/seed.ts`): `theodor_amstad@hotmail.com` (MANAGER) and `diana_amstad@hotmail.com` (ASSISTANT).
 
 ## Next.js 16 notes
 
 - See AGENTS.md: read the bundled docs in `node_modules/next/dist/docs/` (`01-app`, `02-pages`, `03-architecture`) before using Next APIs. Don't rely on memory.
 - Layouts and pages use the globally generated route-prop types (for example `LayoutProps<"/">` in `app/layout.tsx`), so you don't need to import them.
-- Tailwind v4 is configured CSS-first. There's no `tailwind.config.*` file. Theme tokens live in `app/globals.css` under `@theme inline`, and PostCSS uses `@tailwindcss/postcss`.
+- Tailwind v4 is configured CSS-first (no `tailwind.config.*`). `app/globals.css` declares `@layer theme, base, mui, components, utilities;` so MUI's styles sit below Tailwind utilities.
 - The path alias `@/*` maps to the project root.
 
 ## Backend API contract
@@ -73,11 +86,13 @@ There's no test runner configured. To run the full stack from the parent directo
 - Base URL: `${NEXT_PUBLIC_API_URL}/api/v1`.
 - Auth: `POST /auth/signin` with `{ email, password }` (password must be at least 8 characters) returns `{ accessToken }`. The JWT expires after 30 minutes. Every other route is protected by a global guard and needs `Authorization: Bearer <token>`.
 - Endpoints: `GET /users/me`, `GET /areas`, and `POST|GET /requests` plus `GET|PATCH|DELETE /requests/:id`.
-- `GET /requests` accepts `search`, `status`, `priority`, `areaId`, `page`, and `limit` (default 10).
+- `GET /requests` accepts `search`, `status`, `priority`, `areaId`, `page`, `limit` (default 10), and `order` (`asc`|`desc` by `createdAt`). It returns `{ data, meta: { total, page, limit, totalPages } }`.
+- `GET /requests/summary` returns `{ total, byStatus, byPriority }`.
+- Request responses include `user: { id, name }` and `area: { id, name, type }`. `POST /requests` takes `{ title, description, areaId, priority }`; the requester comes from the JWT.
 - Request status flow: new requests are `PENDING`. `PATCH` accepts only `UNDER_REVIEW`, `APPROVED`, or `REJECTED`; `APPROVED` and `REJECTED` require `decisionComment`. Only `PENDING` requests can be deleted.
-- The backend's `main.ts` doesn't call `enableCors()`. Browser requests from port 3000 to port 3001 will be blocked until CORS is enabled on the backend or calls are proxied through Next (for example rewrites, route handlers, or server actions).
+- CORS on the backend allows `CORS_ORIGIN` (default `http://localhost:3000`). Running the frontend on another port needs that variable changed.
 
 ## Gotchas
 
-- The `Dockerfile` has `EXPOSE 3001`, but `next start` listens on 3000, and compose maps `3000:3000`.
-- `NEXT_PUBLIC_*` variables are inlined into client code during `npm run build`, which runs inside the Docker image build. Compose only sets `NEXT_PUBLIC_API_URL` as a runtime `environment` value, so client-side code in the container won't see it unless it's also passed as a build arg.
+- The Docker backend container mounts the working tree and runs in watch mode, so the checked-out git branch is what the API serves. Keep `backend` merged into `frontend`. After switching branches, its incremental compiler can get stuck on deleted files; `docker restart sicredi-conexao-nossas-ideias-backend` fixes it.
+- The Docker frontend container (port 3000) serves a stale production image. For development, stop it or run `next dev`/`next start` on another port (and adjust `CORS_ORIGIN`).
