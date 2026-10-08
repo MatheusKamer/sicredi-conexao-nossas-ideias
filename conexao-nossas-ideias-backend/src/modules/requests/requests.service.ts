@@ -6,59 +6,115 @@ import {
 import { CreateRequestDto } from './dto/create-request.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
 import { RequestsRepository } from 'src/shared/database/repositories/requests.repository';
-import { RequestsStatusType } from './entities/request.entity';
+import {
+  RequestsPriorityType,
+  RequestsStatusType,
+} from './entities/request.entity';
 import { FindRequestsDto } from './dto/find-requests.dto';
+import { Prisma } from 'generated/prisma/client';
+
+const requestRelations = {
+  user: { select: { id: true, name: true } },
+  area: { select: { id: true, name: true, type: true } },
+} satisfies Prisma.RequestsInclude;
 
 @Injectable()
 export class RequestsService {
   constructor(private readonly requestsRepo: RequestsRepository) {}
 
-  create(createRequestDto: CreateRequestDto) {
-    const { title, description, requester, areaId, priority } =
-      createRequestDto;
+  create(userId: string, createRequestDto: CreateRequestDto) {
+    const { title, description, areaId, priority } = createRequestDto;
 
     return this.requestsRepo.create({
       data: {
         title,
         description,
-        requester,
+        requester: userId,
         areaId,
         priority,
       },
+      include: requestRelations,
     });
   }
 
-  findAll({
+  async findAll({
     search,
     status,
     priority,
     areaId,
     page = 1,
     limit = 10,
+    order = 'desc',
   }: FindRequestsDto) {
-    return this.requestsRepo.findMany({
-      where: {
-        OR: search
-          ? [
-              { title: { contains: search, mode: 'insensitive' } },
-              { description: { contains: search, mode: 'insensitive' } },
-            ]
-          : undefined,
-        status,
-        priority,
-        areaId,
+    const where: Prisma.RequestsWhereInput = {
+      OR: search
+        ? [
+            { title: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } },
+          ]
+        : undefined,
+      status,
+      priority,
+      areaId,
+    };
+
+    const [data, total] = await Promise.all([
+      this.requestsRepo.findMany({
+        where,
+        include: requestRelations,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: {
+          createdAt: order,
+        },
+      }),
+      this.requestsRepo.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    };
+  }
+
+  async getSummary() {
+    const statuses = Object.values(RequestsStatusType);
+    const priorities = Object.values(RequestsPriorityType);
+
+    const [total, statusCounts, priorityCounts] = await Promise.all([
+      this.requestsRepo.count({}),
+      Promise.all(
+        statuses.map((status) =>
+          this.requestsRepo.count({ where: { status } }),
+        ),
+      ),
+      Promise.all(
+        priorities.map((priority) =>
+          this.requestsRepo.count({ where: { priority } }),
+        ),
+      ),
+    ]);
+
+    return {
+      total,
+      byStatus: Object.fromEntries(
+        statuses.map((status, index) => [status, statusCounts[index]]),
+      ) as Record<RequestsStatusType, number>,
+      byPriority: Object.fromEntries(
+        priorities.map((priority, index) => [priority, priorityCounts[index]]),
+      ) as Record<RequestsPriorityType, number>,
+    };
   }
 
   async findOne(id: string) {
     const request = await this.requestsRepo.findUnique({
       where: { id },
+      include: requestRelations,
     });
 
     if (!request) {
@@ -100,6 +156,7 @@ export class RequestsService {
         decisionComment,
         decidedAt: isDecision ? new Date() : null,
       },
+      include: requestRelations,
     });
   }
 
