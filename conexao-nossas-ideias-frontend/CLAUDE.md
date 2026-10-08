@@ -61,6 +61,8 @@ The design is in `../../sicredi_nossas_ideias.pen` (outside this git repo). `.pe
 
 Priority display (not a component, but repeated): Alta = `keyboard_double_arrow_up`, Média = `drag_handle`, Baixa = `keyboard_arrow_down`. Chart priority colors are Baixa `#B5D67F`, Média `#7FBA27`, Alta `#00703C`. Icons in the design use Material Symbols **Rounded**, so use the `*Rounded` variants from `@mui/icons-material`.
 
+Brand: use `public/sicredi-logo.png` (the green wordmark, 3500×823) instead of the design's light-bulb brand mark. It only works on light backgrounds, so on the login page it sits on the white form panel. The login art panel's tile composition is a static export from Pencil (`public/login-art.webp`).
+
 Shared layout (all authenticated screens): a 256px white sidebar (brand, nav groups "PRINCIPAL"/"ADMINISTRAÇÃO", user card at the bottom), a 64px top bar (breadcrumb, search, notifications, help), and a content area with 32px padding on a `bg` background. Dialogs are 600px wide with radius 8, a header (title 22 + subtitle + close button), and a footer with actions on the right.
 
 ## Commands
