@@ -11,8 +11,8 @@ Read this together with `docs/PLAN.md` (roadmap and decisions) and `CLAUDE.md` (
 | 3. Signin page | ✅ | `20261007-signin-page` |
 | 4. Shared layout + shared components | ✅ | `20261007-shared-layout` |
 | 5. Solicitações page | ✅ | `20261008-solicitacoes-page` |
-| 6. Nova Solicitação modal | ⏳ next | — |
-| 7. Alterar Status + Decisão Final modals | — | — |
+| 6. Nova Solicitação modal | ✅ | `20261008-new-request-dialog` |
+| 7. Alterar Status + Decisão Final modals | ⏳ next | — |
 | 8. Dashboard | — | — |
 | 9. Polish | — | — |
 | 10. README | — | — |
@@ -118,11 +118,45 @@ What was built:
   - mobile layout with no page-level overflow
 - Typecheck, lint and production build pass.
 
-## Next: steps 6–7
+## What step 6 delivered
 
-- **Step 6, `NewRequestDialog`:** plug it into `NewRequestButton`. Mutations already invalidate `['requests']`, so the list, summary and badge refresh on their own. The success snackbar currently lives in `RequestsView` (local state). If the Dashboard needs one too, lift it into a small provider.
-- **Step 7, Alterar status / Decisão final:** `RequestsView` already sets `dialog.action` to `'change-status'` / `'decide'`. Render `ChangeStatusDialog` / `DecisionDialog` next to `DeleteRequestDialog`, following the same `open` + `request` pattern. The spot is marked with a comment.
+- **`NewRequestDialog`** (`components/requests/new-request-dialog.tsx`), opened by `NewRequestButton`. The button owns the dialog, so the Dashboard header can reuse it as is.
+  - **Validation (react-hook-form + zod):**
+    - Título: required, trimmed, max 100.
+    - Descrição: required, trimmed, max 1000.
+    - Departamento: required.
+    - Prioridade: defaults to Média, as in the design.
+    - The 100/1000 limits come from the design. The backend only checks for non-empty values.
+  - **Helper row:** helper text or error on the left, character counter on the right.
+  - **Solicitante:** read-only `user.name` with a lock icon, labelled "Preenchido com seu usuário."
+  - **Departamento:** a searchable `Autocomplete` instead of a plain select. There are 70 areas (10 sede, 60 agências), grouped "Sede" then "Agências" and alphabetical within each group.
+  - **Priority:** `RadioGroup` with a hint that changes with the selection. The design only had copy for Média; the Baixa and Alta texts (10 and 2 business days) are ours, so adjust them if the business says otherwise.
+  - **On open:** the form resets every time, and focus goes to Título after the enter transition (`DialogShell` `onEntered` + RHF `setFocus`). `autoFocus` doesn't work there, because MUI's focus trap moves focus to the paper.
+  - **Submit:** `useCreateRequest` (the list, summary and badge refresh by themselves), then the dialog closes and shows "Solicitação registrada com sucesso." On failure an `Alert` appears and the values stay. Closing is blocked while saving.
+- **`FeedbackProvider` / `useNotify()`** (`components/ui/feedback-provider.tsx`, mounted in `app/providers.tsx`): one shared message bar for the whole app. `RequestsView` now uses it for "Solicitação excluída."
+- **`DialogShell` changes:**
+  - New `onEntered` prop.
+  - The footer note is hidden below `sm`, so the buttons get the whole row (they stay right-aligned).
+  - The footer uses `useFlexGap`.
+- **Hydration fix (bug from step 5):** in dev, the `<Suspense>` content hydrated after the sidebar had already cached `/requests/summary`, so the pill counts didn't match the server HTML.
+  - `RequestsView` now renders `RequestsViewFallback` until hydration finishes (`lib/use-hydrated.ts`).
+  - The same skeleton is the Suspense fallback, which used to be blank.
+  - Use `useHydrated` for any late-hydrating subtree that reads queries other components share.
+- **Verified in the browser** (1440 and 390 widths):
+  - empty-submit validation, errors clearing as you type
+  - department search and grouping, priority hint
+  - creating a request (trimmed, list/pills/badge refreshed, message shown)
+  - form reset and focus on reopen, full-screen layout on phones
+  - simulated 500 → `Alert` with the values kept
+  - cleanup through Excluir
+  - no console errors
+- The database is back to the original 6 sample requests.
+- Typecheck, lint and production build pass.
 
-## Known leftovers (not from step 5)
+## Next: step 7 (Alterar status + Decisão final)
+
+`RequestsView` already sets `dialog.action` to `'change-status'` / `'decide'`. Render `ChangeStatusDialog` / `DecisionDialog` next to `DeleteRequestDialog` (the spot has a comment), following the same `open` + `request` pattern. Use `useUpdateRequestStatus`, `useNotify` for success, and `onEntered` for focus (the decision comment field).
+
+## Known leftovers
 
 - **Logo warning:** Next warns that `/sicredi-logo.png` has only one dimension changed. Add `width/height: auto` styles in `AppSidebar`. Polish (step 9).

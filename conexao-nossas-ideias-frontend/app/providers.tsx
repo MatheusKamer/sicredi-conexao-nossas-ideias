@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ApiError } from '@/lib/api/client';
+import { FeedbackProvider } from '@/components/ui/feedback-provider';
 import { AuthProvider } from '@/lib/auth/auth-provider';
 import { theme } from '@/theme/theme';
 
@@ -29,7 +30,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <FeedbackProvider>{children}</FeedbackProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );
