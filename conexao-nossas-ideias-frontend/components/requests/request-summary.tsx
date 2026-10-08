@@ -11,7 +11,7 @@ function Meta({ label, children }: { label: string; children: React.ReactNode })
         {label}
       </Typography>
       {typeof children === 'string' ? (
-        <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
+        <Typography variant="body2" noWrap title={children} sx={{ fontWeight: 500 }}>
           {children}
         </Typography>
       ) : (

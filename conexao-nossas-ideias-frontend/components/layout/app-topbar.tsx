@@ -48,6 +48,8 @@ function GlobalSearch() {
         event.preventDefault();
         const search = value.trim();
         router.push(search ? `/solicitacoes?search=${encodeURIComponent(search)}` : '/solicitacoes');
+        // The Solicitações search field takes over the term; a stale copy here would be confusing.
+        setValue('');
       }}
       sx={{
         display: { xs: 'none', sm: 'flex' },

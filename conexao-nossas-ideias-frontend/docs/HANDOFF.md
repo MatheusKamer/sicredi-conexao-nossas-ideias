@@ -1,4 +1,4 @@
-# Handoff: where we stopped (2026-10-07)
+# Handoff: where we stopped (2026-10-08)
 
 Read this together with `docs/PLAN.md` (roadmap and decisions) and `CLAUDE.md` (architecture and conventions).
 
@@ -10,8 +10,8 @@ Read this together with `docs/PLAN.md` (roadmap and decisions) and `CLAUDE.md` (
 | 2. Foundation + API/auth layer | ✅ | `20261007-frontend-foundation` |
 | 3. Signin page | ✅ | `20261007-signin-page` |
 | 4. Shared layout + shared components | ✅ | `20261007-shared-layout` |
-| 5. Solicitações page | ⏳ next, **waiting on the questions below** | — |
-| 6. Nova Solicitação modal | — | — |
+| 5. Solicitações page | ✅ | `20261008-solicitacoes-page` |
+| 6. Nova Solicitação modal | ⏳ next | — |
 | 7. Alterar Status + Decisão Final modals | — | — |
 | 8. Dashboard | — | — |
 | 9. Polish | — | — |
@@ -70,24 +70,59 @@ Workflow agreed with the user:
   - **Server command:** use `node node_modules/next/dist/bin/next start -p 3000` (after `npm run build`) or `npm run dev`. With `npx`, stopping the task leaves the Node child running; free the port with `Get-NetTCPConnection -LocalPort 3000 | Stop-Process` (PowerShell).
   - **Sample data from Git Bash:** create it with Node (`fetch`), not `curl`. `curl` in Git Bash corrupted accented characters.
 
-## Open questions for step 5 (Solicitações page): ask the user first
+## What step 5 delivered
 
-1. **Quick-status pill counts:** they come from `GET /requests/summary`, so they're totals over all requests and ignore the search text and other filters. Is that acceptable for the MVP? The alternative is adding filter params to the backend summary endpoint, which is a backend branch from `backend`.
-2. **"Ver detalhes" for decided requests (optional in PLAN.md §5.3):** a read-only dialog with `RequestSummary` + decision comment + `decidedAt`, reachable from the row menu of APPROVED/REJECTED requests. It's cheap now that `RequestSummary` and `DialogShell` exist. Include it in step 5?
+Decisions taken with the user (2026-10-08):
+- **Quick-status pill counts** stay global totals from `GET /requests/summary`. They ignore the search and other filters, and no backend change was made.
+- **"Ver detalhes"** for APPROVED/REJECTED requests is included.
 
-## Step 5 scope (as proposed to the user)
+What was built:
+- **`/solicitacoes`** (`app/(app)/solicitacoes/`):
+  - `page.tsx` (server): `PageHeader` plus `<Suspense>` around `RequestsView`, because `useSearchParams` needs a Suspense boundary.
+  - `requests-view.tsx` (client): wires the filters, table, pagination and dialogs together.
+- **URL as state** (`lib/requests/use-request-filters.ts`):
+  - **Params:** `search`, `status`, `priority`, `order`, `page`, `limit` (10/25/50).
+  - **Parsing:** invalid values fall back to the defaults, and defaults are left out of the URL.
+  - **Page reset:** any change that doesn't set `page` resets it to 1.
+  - **Out-of-range pages:** a page past the end (stale link, or deleting the last row of the last page) is clamped to the last page.
+  - **Writes:** `router.replace` with `scroll: false`.
+- **`RequestsFilters`** (filters card):
+  - Buscar, debounced 300ms. It keeps its own input and re-syncs when the URL changes from outside, e.g. the top-bar search or Limpar filtros.
+  - Status, Prioridade and "Ordenar por data" selects.
+  - Quick-status pills (`aria-pressed`).
+  - "N solicitações encontradas" (singular aware).
+  - "Limpar filtros": resets search/status/priority/order and keeps the page size. Disabled when nothing is active.
+- **Search placeholder:** "Título ou descrição". The design says "Título, código ou solicitante", but the backend only searches title and description.
+- **`RequestsPagination`:** "Exibindo X–Y de N", "Linhas por página", MUI `Pagination` with pt-BR aria labels.
+- **`RequestRowActions` + `availableActions()`:** the status-flow/role rules from PLAN.md §5.3. As Gestor:
+  - PENDING → Alterar status + Excluir
+  - UNDER_REVIEW → Decisão final
+  - APPROVED/REJECTED → Ver detalhes
 
-- **Filters card:**
-  - Buscar: debounced 300ms.
-  - Status, Prioridade, and "Ordenar por data" (Mais recentes / Mais antigos → `order`) selects.
-  - Quick-status pills with counts; clicking one sets the status filter.
-  - "N solicitações encontradas" and "Limpar filtros".
-- **URL as state:** all filters plus `page`/`limit` live in the URL search params. Any filter change resets `page=1`, and `?search=` from the top bar must be respected.
-- **`RequestsTable variant="full"`:** the "Criado em" sort label toggles `order`.
-- **Row menu (⋮), only valid actions:**
-  - **Alterar status:** `PENDING` and `isManager`.
-  - **Decisão final:** `UNDER_REVIEW` and `isManager`.
-  - **Excluir:** `PENDING`, any role, with a confirmation dialog → `useDeleteRequest`.
-- **Pagination footer:** "Exibindo X–Y de N", "Linhas por página" (10/25/50), and MUI `Pagination`.
-- **States:** loading skeleton, empty state with "Limpar filtros", and an error `Alert` with retry.
-- **Modals:** "Nova solicitação" and the status/decision modals come in steps 6–7. In step 5, wire the button and menu items so the modals can be plugged in later.
+  As Assistente: PENDING → Excluir, UNDER_REVIEW → no menu, decided → Ver detalhes.
+- **`DeleteRequestDialog`:** `RequestSummary` + confirmation, `useDeleteRequest`, an error `Alert`, and a success snackbar ("Solicitação excluída.").
+- **`RequestDetailsDialog`:** `RequestSummary` + decision chip + comment + "Decidida em … às …".
+- **Dialog state pattern:** dialogs take `open` and `request` separately. The view keeps `{ action, request }` and only clears `action` on close, so the content doesn't vanish during the exit transition. Reuse this pattern for the step 6–7 dialogs.
+- **States:** skeleton rows (`limit` rows), a thin `LinearProgress` while refetching with previous data, an empty state (with Limpar filtros when filters are active), and an error `Alert` with "Tentar novamente".
+- **`NewRequestButton`** (`components/requests/new-request-button.tsx`): the header action, which does nothing yet. Step 6 adds `NewRequestDialog` inside it, so the Dashboard can reuse the same button.
+- **Tweaks to shared components:**
+  - `RequestsTable`: Departamento is 200px and Solicitante 160px (real area names are long), table `minWidth` is 1040, and the sorted "Criado em" label is `primary` like the design, with an aria-label.
+  - `RequestSummary`: truncated meta values get a `title`.
+  - `AppTopbar`: clears its search box after submitting.
+- **Verified in the browser** (Playwright at 1440 and 390 widths, as Theodor and Diana):
+  - debounced search → URL, and top-bar search → filter field
+  - pills, Limpar filtros, sort toggle, page clamp
+  - row menus per role
+  - Ver detalhes
+  - Excluir on a throwaway request (the sidebar badge and counts refresh)
+  - mobile layout with no page-level overflow
+- Typecheck, lint and production build pass.
+
+## Next: steps 6–7
+
+- **Step 6, `NewRequestDialog`:** plug it into `NewRequestButton`. Mutations already invalidate `['requests']`, so the list, summary and badge refresh on their own. The success snackbar currently lives in `RequestsView` (local state). If the Dashboard needs one too, lift it into a small provider.
+- **Step 7, Alterar status / Decisão final:** `RequestsView` already sets `dialog.action` to `'change-status'` / `'decide'`. Render `ChangeStatusDialog` / `DecisionDialog` next to `DeleteRequestDialog`, following the same `open` + `request` pattern. The spot is marked with a comment.
+
+## Known leftovers (not from step 5)
+
+- **Logo warning:** Next warns that `/sicredi-logo.png` has only one dimension changed. Add `width/height: auto` styles in `AppSidebar`. Polish (step 9).
