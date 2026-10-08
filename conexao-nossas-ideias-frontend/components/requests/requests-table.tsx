@@ -48,12 +48,12 @@ export function RequestsTable({
 
   return (
     <TableContainer>
-      <Table sx={{ minWidth: 880, '& td': { py: 1.75 }, '& th': { py: 1.25 } }}>
+      <Table sx={{ minWidth: 1040, '& td': { py: 1.75 }, '& th': { py: 1.25 } }}>
         <TableHead>
           <TableRow>
             <TableCell sx={firstCell}>Solicitação</TableCell>
-            <TableCell sx={{ width: 140 }}>Departamento</TableCell>
-            <TableCell sx={{ width: 170 }}>Solicitante</TableCell>
+            <TableCell sx={{ width: 200 }}>Departamento</TableCell>
+            <TableCell sx={{ width: 160 }}>Solicitante</TableCell>
             <TableCell sx={{ width: 120 }}>Prioridade</TableCell>
             <TableCell sx={{ width: 130 }}>Status</TableCell>
             <TableCell sx={{ width: 120, ...(renderActions ? {} : lastCell) }}>
@@ -63,6 +63,10 @@ export function RequestsTable({
                   direction={order}
                   onClick={onToggleOrder}
                   disabled={!onToggleOrder}
+                  aria-label={`Criado em, ${order === 'desc' ? 'mais recentes primeiro' : 'mais antigos primeiro'}`}
+                  sx={{
+                    '&.Mui-active, &.Mui-active .MuiTableSortLabel-icon': { color: 'primary.main' },
+                  }}
                 >
                   Criado em
                 </TableSortLabel>
