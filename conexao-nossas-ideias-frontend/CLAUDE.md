@@ -20,6 +20,10 @@ Stack: Next.js 16.3 App Router (`app/`), React 19.2, TypeScript strict, MUI Mate
   - `session.ts`: JWT stored in the non-HttpOnly `cni_session` cookie, with `max-age` taken from the token `exp`. It's shared with `proxy.ts`, so it has no `"use client"`.
   - `auth-provider.tsx`: `useAuth()` returns `{ user, isManager, signin, signout }`. On a 401, `apiRequest` clears the cookie and calls the handler AuthProvider registered, which clears the query cache and routes to `/signin?next=…`.
 - `proxy.ts` (Next 16's middleware): an optimistic cookie check. It redirects `/dashboard` and `/solicitacoes` to `/signin` without a session, and `/signin` to `/dashboard` with one.
+- Routes: `app/(auth)/signin` (no shell) and `app/(app)/*`. `app/(app)/layout.tsx` wraps pages in `AppShell` (permanent sidebar on `md+`, temporary drawer plus menu button below). Add new authenticated pages under `(app)` and register their breadcrumb title in `PAGE_TITLES` (`components/layout/app-topbar.tsx`).
+- `components/layout/`: `AppShell`, `AppSidebar` (nav, open-count badge from the summary, user menu with Sair), `AppTopbar` (breadcrumb, search → `/solicitacoes?search=`, Ctrl/Cmd+K), `PageHeader`.
+- `components/requests/`: `StatusChip`, `PriorityLabel`, `RequestsTable` (`variant="compact" | "full"`; handles loading skeleton and empty rows; `renderActions` for the row menu), `RequestSummary` (read-only card for dialogs). `components/ui/`: `MetricCard`, `DialogShell` (header/content/footer anatomy; pass `onSubmit` to render a form; `busy` blocks closing; full screen below `sm`).
+- `lib/format.ts`: pt-BR formatters (`formatDate` "07 out 2026", `formatTime`, `formatRelative` "há 2 h", `formatPercent`, `formatRequestCode` "#3B248836", `initials`).
 - `lib/requests/labels.ts`: pt-BR labels for statuses, priorities, area types, and roles. Use them instead of inline strings.
 - Role rule (frontend-only by decision): only `MANAGER` (`useAuth().isManager`) may change status or decide.
 
