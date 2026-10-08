@@ -87,6 +87,11 @@ export const theme = createTheme({
         body: { backgroundColor: tokens.bg },
       },
     },
+    MuiTypography: {
+      defaultProps: {
+        variantMapping: { subtitle1: 'p', subtitle2: 'p' },
+      },
+    },
     MuiButton: {
       defaultProps: { color: 'secondary' },
       styleOverrides: {
