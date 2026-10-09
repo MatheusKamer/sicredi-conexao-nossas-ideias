@@ -40,7 +40,7 @@ The design shows more than the backend currently supports. Each item below has a
 - **G7:** the backend takes the requester from the JWT (`request.userId`), and `requester` is removed from `CreateRequestDto`. The frontend only displays `me.name`.
 - **G10:** enforced **in the frontend**. Only `MANAGER` sees and uses "Alterar status" and "Decisão final". Everything else, including deleting `PENDING` requests, stays available to both roles.
 - **Status flow** (PENDING → UNDER_REVIEW → APPROVED/REJECTED) is enforced **in the frontend only**. The API stays permissive.
-- **Git:** never commit on `main`. Backend work goes on a new branch from `backend`; frontend work goes on a new branch from `frontend`.
+- **Git:** originally, work went on feature branches from `backend`/`frontend`, never on `main`. Since 2026-10-08 everything is merged into `main` and work happens directly on `main`, committing only when the user asks.
 
 Enum ↔ label mapping (single source in `lib/requests/labels.ts`):
 - Status: `PENDING` = **Aberta**, `UNDER_REVIEW` = **Em análise**, `APPROVED` = **Aprovada**, `REJECTED` = **Rejeitada**

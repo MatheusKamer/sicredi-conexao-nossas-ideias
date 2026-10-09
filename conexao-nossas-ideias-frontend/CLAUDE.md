@@ -100,5 +100,5 @@ There's no test runner configured. Copy `.env.example` to `.env.local` (`NEXT_PU
 
 ## Gotchas
 
-- The Docker backend container mounts the working tree and runs in watch mode, so the checked-out git branch is what the API serves. Keep `backend` merged into `frontend`. After switching branches, its incremental compiler can get stuck on deleted files; `docker restart sicredi-conexao-nossas-ideias-backend` fixes it.
+- The Docker backend container mounts the working tree and runs in watch mode, so the checked-out git branch is what the API serves (everything now lives on `main`). After switching branches, its incremental compiler can get stuck on deleted files; `docker restart sicredi-conexao-nossas-ideias-backend` fixes it.
 - The Docker frontend container (port 3000) serves a stale production image. For development, stop it or run `next dev`/`next start` on another port (and adjust `CORS_ORIGIN`).

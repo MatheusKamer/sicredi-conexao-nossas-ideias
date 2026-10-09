@@ -4,7 +4,7 @@ Read this together with `docs/PLAN.md` (roadmap and decisions) and `CLAUDE.md` (
 
 ## Progress (PLAN.md §7)
 
-| Step | Status | Branch (merged into `frontend` or `backend`) |
+| Step | Status | Branch (historical; all merged into `main` and deleted on 2026-10-08) |
 |---|---|---|
 | 1. Backend prerequisites (CORS, names, pagination, order, summary, requester from JWT) | ✅ | `20261007-frontend-support-endpoints` → `backend` → `frontend` |
 | 2. Foundation + API/auth layer | ✅ | `20261007-frontend-foundation` |
@@ -19,8 +19,9 @@ Read this together with `docs/PLAN.md` (roadmap and decisions) and `CLAUDE.md` (
 
 Workflow agreed with the user:
 - Ask before starting each step.
-- Never commit to or merge into `main`.
-- Create frontend branches from `frontend` and backend branches from `backend`, then merge back with `--no-ff` and push. The `gh` CLI isn't installed, so merges are done locally.
+- Since 2026-10-08, work directly on `main`; there are no other branches.
+- Commit and push **only when the user explicitly asks**. Otherwise leave changes uncommitted.
+- The `gh` CLI isn't installed.
 
 ## What step 4 delivered
 
