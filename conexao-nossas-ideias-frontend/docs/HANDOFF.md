@@ -12,8 +12,8 @@ Read this together with `docs/PLAN.md` (roadmap and decisions) and `CLAUDE.md` (
 | 4. Shared layout + shared components | ✅ | `20261007-shared-layout` |
 | 5. Solicitações page | ✅ | `20261008-solicitacoes-page` |
 | 6. Nova Solicitação modal | ✅ | `20261008-new-request-dialog` |
-| 7. Alterar Status + Decisão Final modals | ⏳ next | — |
-| 8. Dashboard | — | — |
+| 7. Alterar Status + Decisão Final modals | ✅ | `20261008-status-decision-dialogs` |
+| 8. Dashboard | ⏳ next | — |
 | 9. Polish | — | — |
 | 10. README | — | — |
 
@@ -153,10 +153,44 @@ What was built:
 - The database is back to the original 6 sample requests.
 - Typecheck, lint and production build pass.
 
-## Next: step 7 (Alterar status + Decisão final)
+## What step 7 delivered
 
-`RequestsView` already sets `dialog.action` to `'change-status'` / `'decide'`. Render `ChangeStatusDialog` / `DecisionDialog` next to `DeleteRequestDialog` (the spot has a comment), following the same `open` + `request` pattern. Use `useUpdateRequestStatus`, `useNotify` for success, and `onEntered` for focus (the decision comment field).
+- **`ChangeStatusDialog`** (PENDING → UNDER_REVIEW):
+  - `RequestSummary`, then two option cards: Aberta (shown as "Status atual", can't be picked) and Em análise (preselected, the only valid target at this stage).
+  - Info hint, "Registrada no histórico" footer note, and the **Atualizar status** button.
+  - On success the dialog closes and shows "Status atualizado para Em análise."
+- **`DecisionDialog`** (UNDER_REVIEW → APPROVED | REJECTED):
+  - Option cards: Aprovar (primary) and Rejeitar (error tint), each showing its resulting status chip.
+  - **No option is preselected** (the design pre-selects Aprovar): the decision is final, so the manager has to choose explicitly.
+  - **Comentário da decisão:** required, trimmed (a whitespace-only comment is rejected before anything is sent), max 1000, with a counter.
+  - **Helper text deviation:** the design says the comment "será enviado ao solicitante", but the app has no notifications, so it now says the comment appears in the request details.
+  - Warning hint ("A decisão final é definitiva…"), **Confirmar decisão** button with `GavelRounded`.
+  - On success: "Decisão registrada: solicitação aprovada/rejeitada."
+- **Shared pieces:**
+  - `components/ui/option-card.tsx`: a selectable card with a radio, used inside a `RadioGroup`, with `primary`/`error` selected colors.
+  - `components/requests/dialog-hint.tsx`: `DialogHint` (info/warning) and `HistoryNote`.
+  - `components/ui/helper-row.tsx`: the helper text + counter row, now also used by `NewRequestDialog`.
+  - `components/requests/update-error-message.ts`.
+- **Wiring:** both dialogs are mounted in `RequestsView` with the `open` + `request` pattern. On open they reset and move focus (the Em análise option, or the first decision option).
+- **Verified in the browser** (1440 and 390 widths):
+  - On a throwaway request: Alterar status → the menu then offers only Decisão final.
+  - Decision validation: empty submit, whitespace-only comment.
+  - Rejecting it, then checking that Ver detalhes shows the comment and "Decidida em".
+  - Pills and sidebar badge refreshed.
+  - The throwaway row was deleted directly in Postgres afterwards (`DELETE … WHERE id = …`), because decided requests can't be deleted through the API. The database is back to the original 6.
+- Typecheck, lint and production build pass.
+
+## Next: step 8 (Dashboard)
+
+`app/(app)/dashboard/page.tsx` is still the step 4 placeholder (title only), which is why "the dashboard shows nothing". PLAN.md §5.2 has the spec. What's ready to reuse:
+- `NewRequestButton` for the header action.
+- `MetricCard` and `useRequestsSummary` for the 4 metrics.
+- `@mui/x-charts`, with chart colors in `theme.palette.priority`.
+- `RequestsTable variant="compact"` with `useRequests({ limit: 5 })`.
+
+If any part of the dashboard renders inside `<Suspense>`, gate it with `useHydrated` (see step 6).
 
 ## Known leftovers
 
 - **Logo warning:** Next warns that `/sicredi-logo.png` has only one dimension changed. Add `width/height: auto` styles in `AppSidebar`. Polish (step 9).
+- **Fieldset legend color:** the "Novo status" / "Decisão" / "Nível de prioridade" legends turn primary while a radio inside has focus (MUI `FormLabel` focus color). The design shows them in text-secondary. Optional polish.
