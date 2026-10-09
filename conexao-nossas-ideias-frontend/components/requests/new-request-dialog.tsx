@@ -15,12 +15,9 @@ import {
   InputAdornment,
   Radio,
   RadioGroup,
-  Stack,
   TextField,
-  Typography,
 } from '@mui/material';
 import CheckRounded from '@mui/icons-material/CheckRounded';
-import InfoRounded from '@mui/icons-material/InfoRounded';
 import LockRounded from '@mui/icons-material/LockRounded';
 import { ApiError } from '@/lib/api/client';
 import { REQUEST_PRIORITIES, type Area, type RequestPriority } from '@/lib/api/types';
@@ -29,6 +26,8 @@ import { useAreas, useCreateRequest } from '@/lib/queries/requests';
 import { AREA_TYPE_LABEL, PRIORITY_LABEL } from '@/lib/requests/labels';
 import { DialogShell } from '@/components/ui/dialog-shell';
 import { useNotify } from '@/components/ui/feedback-provider';
+import { HelperRow } from '@/components/ui/helper-row';
+import { DialogHint } from './dialog-hint';
 
 const TITLE_MAX = 100;
 const DESCRIPTION_MAX = 1000;
@@ -75,18 +74,6 @@ function submitErrorMessage(error: unknown) {
     return 'Alguns dados não foram aceitos pelo servidor. Revise os campos e tente novamente.';
   }
   return 'Não foi possível salvar a solicitação. Tente novamente em instantes.';
-}
-
-/** Helper text on the left, character counter on the right (design's TextField helper row). */
-function HelperRow({ text, count, max }: { text?: string; count: number; max: number }) {
-  return (
-    <Stack direction="row" spacing={2} component="span" sx={{ justifyContent: 'space-between' }}>
-      <span>{text}</span>
-      <Box component="span" sx={{ flexShrink: 0, color: count > max ? 'error.main' : undefined }}>
-        {count}/{max}
-      </Box>
-    </Stack>
-  );
 }
 
 type NewRequestDialogProps = {
@@ -303,20 +290,14 @@ export function NewRequestDialog({ open, onClose }: NewRequestDialogProps) {
             </RadioGroup>
           )}
         />
-        <Stack
-          direction="row"
-          spacing={1}
-          aria-live="polite"
-          sx={{ mt: 0.75, px: 1.5, py: 1.25, bgcolor: 'background.default', borderRadius: 1 }}
-        >
-          <InfoRounded sx={{ fontSize: 18, mt: '1px', color: 'text.secondary' }} />
-          <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
+        <Box aria-live="polite" sx={{ mt: 0.75 }}>
+          <DialogHint>
             <Box component="strong" sx={{ fontWeight: 600 }}>
               {PRIORITY_LABEL[priority]}:
             </Box>{' '}
             {PRIORITY_HINT[priority]}
-          </Typography>
-        </Stack>
+          </DialogHint>
+        </Box>
       </FormControl>
     </DialogShell>
   );

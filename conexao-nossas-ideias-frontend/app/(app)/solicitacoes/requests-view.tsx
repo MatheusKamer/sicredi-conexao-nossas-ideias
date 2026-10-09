@@ -7,6 +7,8 @@ import type { Request } from '@/lib/api/types';
 import { useAuth } from '@/lib/auth/auth-provider';
 import { useRequests, useRequestsSummary } from '@/lib/queries/requests';
 import { useRequestFilters } from '@/lib/requests/use-request-filters';
+import { ChangeStatusDialog } from '@/components/requests/change-status-dialog';
+import { DecisionDialog } from '@/components/requests/decision-dialog';
 import { DeleteRequestDialog } from '@/components/requests/delete-request-dialog';
 import { RequestDetailsDialog } from '@/components/requests/request-details-dialog';
 import {
@@ -137,7 +139,16 @@ function RequestsViewContent() {
         )}
       </Card>
 
-      {/* "Alterar status" and "Decisão final" dialogs are plugged in at step 7 (docs/PLAN.md §6.2–6.3). */}
+      <ChangeStatusDialog
+        open={dialog.action === 'change-status'}
+        request={dialog.request}
+        onClose={closeDialog}
+      />
+      <DecisionDialog
+        open={dialog.action === 'decide'}
+        request={dialog.request}
+        onClose={closeDialog}
+      />
       <DeleteRequestDialog
         open={dialog.action === 'delete'}
         request={dialog.request}
