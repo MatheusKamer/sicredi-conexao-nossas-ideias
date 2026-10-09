@@ -13,8 +13,8 @@ Read this together with `docs/PLAN.md` (roadmap and decisions) and `CLAUDE.md` (
 | 5. Solicitações page | ✅ | `20261008-solicitacoes-page` |
 | 6. Nova Solicitação modal | ✅ | `20261008-new-request-dialog` |
 | 7. Alterar Status + Decisão Final modals | ✅ | `20261008-status-decision-dialogs` |
-| 8. Dashboard | ⏳ next | — |
-| 9. Polish | — | — |
+| 8. Dashboard | ✅ | `20261008-dashboard` |
+| 9. Polish | ⏳ next | — |
 | 10. README | — | — |
 
 Workflow agreed with the user:
@@ -180,17 +180,44 @@ What was built:
   - The throwaway row was deleted directly in Postgres afterwards (`DELETE … WHERE id = …`), because decided requests can't be deleted through the API. The database is back to the original 6.
 - Typecheck, lint and production build pass.
 
-## Next: step 8 (Dashboard)
+## What step 8 delivered
 
-`app/(app)/dashboard/page.tsx` is still the step 4 placeholder (title only), which is why "the dashboard shows nothing". PLAN.md §5.2 has the spec. What's ready to reuse:
-- `NewRequestButton` for the header action.
-- `MetricCard` and `useRequestsSummary` for the 4 metrics.
-- `@mui/x-charts`, with chart colors in `theme.palette.priority`.
-- `RequestsTable variant="compact"` with `useRequests({ limit: 5 })`.
+- **`/dashboard`:**
+  - `page.tsx` (server): `PageHeader` with `NewRequestButton`.
+  - `dashboard-view.tsx` (client): no `<Suspense>`, so it hydrates together with the sidebar and needs no `useHydrated` gate.
+- **Metric cards** (`MetricCard`, data from `/requests/summary`):
+  - Total + "x% já decididas"
+  - Em aberto (PENDING + UNDER_REVIEW) + "n em análise"
+  - Aprovadas + "taxa de aprovação"
+  - Rejeitadas + "taxa de rejeição"
 
-If any part of the dashboard renders inside `<Suspense>`, gate it with `useHydrated` (see step 6).
+  These replace the design's "vs. mês anterior" deltas, which need history the API doesn't have (G8). The design's "Últimos 30 dias" period select is omitted.
+- **`PriorityChart`** (`components/dashboard/priority-chart.tsx`, x-charts `BarChart`):
+  - Totals per priority instead of the design's monthly series (G8).
+  - One series, three ordered bars in the design's priority greens.
+  - **Design decisions (dataviz checks):** no legend, since the axis labels identify the bars. A value label on every bar, because the Baixa green is 1.59:1 on white; the validator FAILs this palette as categorical, but here it's an ordinal ramp, not identity.
+  - Rounded 4px bars, about 20% y headroom so the top label isn't clipped, and a hover tooltip.
+- **`StatusChart`** (`components/dashboard/status-chart.tsx`, x-charts `PieChart` donut):
+  - Aprovadas / Em aberto / Rejeitadas in primary / accent / error, with the total in the center.
+  - The legend is also the data table (value + %).
+  - The palette passes the validator; the accent's contrast WARN is covered by those visible values.
+  - A total of 0 shows an empty ring.
+- **`ChartCard`:** shared card header (18/600 title, 13 subtitle, optional action).
+- **Solicitações recentes:** `RequestsTable variant="compact"` with `useRequests({ page: 1, limit: 5, order: 'desc' })`, "Ver todas →" link, empty and error states.
+- **States:** skeletons everywhere while loading, an `Alert` with retry if the summary fails, and an empty state when there are no requests.
+- **x-charts v9 notes:**
+  - Style tick labels with `xAxis/yAxis.tickLabelStyle`.
+  - The bar value label class is `.MuiBarChart-label`; `.MuiBarLabel-root` doesn't exist in v9.
+  - Bars are `.MuiBarChart-element`.
+- **Verified in the browser** (1440 and 390 widths): data matches the summary, the tooltip works, and creating a request from the dashboard dialog refreshes the cards, charts, badge and recent table at once. The test request was deleted through the API, so the database is back to 6. No console errors and no page-level overflow.
+- Typecheck, lint and production build pass.
 
-## Known leftovers
+## Next: step 9 (Polish)
 
-- **Logo warning:** Next warns that `/sicredi-logo.png` has only one dimension changed. Add `width/height: auto` styles in `AppSidebar`. Polish (step 9).
-- **Fieldset legend color:** the "Novo status" / "Decisão" / "Nível de prioridade" legends turn primary while a radio inside has focus (MUI `FormLabel` focus color). The design shows them in text-secondary. Optional polish.
+Candidates collected so far:
+- **Logo warning:** Next warns that `/sicredi-logo.png` has only one dimension changed. Add `width/height: auto` styles in `AppSidebar`.
+- **Fieldset legend color:** the "Novo status" / "Decisão" / "Nível de prioridade" legends turn primary while a radio inside has focus (MUI `FormLabel` focus color); the design shows text-secondary.
+- **Visual pass against the Pencil screenshots:** all six frames, at 1440 and on phones.
+- **Re-run the dataviz anti-pattern check** if the charts change.
+
+Then step 10: the README (run instructions, assumptions, and the G6/G8/G9/G10 limitations, plus the frontend-only role and status-flow rules).

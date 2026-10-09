@@ -1,14 +1,20 @@
 import type { Metadata } from 'next';
+import { Stack } from '@mui/material';
 import { PageHeader } from '@/components/layout/page-header';
+import { NewRequestButton } from '@/components/requests/new-request-button';
+import { DashboardView } from './dashboard-view';
 
 export const metadata: Metadata = { title: 'Dashboard | Conexão Nossas Ideias' };
 
-// Placeholder: the dashboard content is built in step 8 of docs/PLAN.md.
 export default function DashboardPage() {
   return (
-    <PageHeader
-      title="Painel de Solicitações"
-      subtitle="Acompanhe demandas e ideias das áreas da cooperativa em tempo real."
-    />
+    <Stack spacing={3}>
+      <PageHeader
+        title="Painel de Solicitações"
+        subtitle="Acompanhe demandas e ideias das áreas da cooperativa em tempo real."
+        actions={<NewRequestButton />}
+      />
+      <DashboardView />
+    </Stack>
   );
 }
