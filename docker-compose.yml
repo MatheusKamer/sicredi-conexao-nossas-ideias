@@ -25,21 +25,28 @@ services:
     container_name: sicredi-conexao-nossas-ideias-backend
     ports:
       - '3001:3001'
+    volumes:
+      - ./conexao-nossas-ideias-backend:/app
+      - /app/node_modules
+    command: sh -c "npx prisma migrate deploy && npx prisma db seed && npm run start:dev"
     environment:
-      - DATABASE_URL=postgresql://postgres_nossas_ideias:postgres_nossas_ideias@postgres:5432/sicredi_conexao_nossas_ideias?schema=public
+      DATABASE_URL: postgresql://postgres_nossas_ideias:postgres_nossas_ideias@postgres:5432/sicredi_conexao_nossas_ideias?schema=public
+      WATCHPACK_POLLING: 'true'
+      CHOKIDAR_USEPOLLING: 'true'
     depends_on:
       postgres:
         condition: service_healthy
 
   frontend:
-    build: ./conexao-nossas-ideias-frontend
+    build:
+      context: ./conexao-nossas-ideias-frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3001
     container_name: sicredi-conexao-nossas-ideias-frontend
     ports:
       - '3000:3000'
     depends_on:
       - backend
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:3001
 
 volumes:
   postgres_data:
