@@ -17,6 +17,11 @@ Após a inicialização, acesse:
 - Frontend: http://localhost:3000
 - Backend: http://localhost:3001
 
+Para acessar o frontend, utilize os seguintes usuários:
+
+- usuário: theodor_amstad@hotmail.com | senha: Sicredi@123 | role: gestor - gerencia a fila de solicitações.
+- usuário: diana_amstad@hotmail.com | senha: Sicredi@123 | role: assistente - abre e acompanha as solicitações.
+
 Para parar os containers, pressione `Ctrl+C` ou execute:
 
 ```bash
